@@ -13,3 +13,8 @@ spring:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+mapbox:
+  api:
+    url: https://api.mapbox.com/directions/v5/mapbox/walking
+    key: pk.eyJ1IjoibXlyb3NsYXYtc2IiLCJhIjoiY21manU4cTk5MDlsazJ3c2h1dzBndDI3cSJ9.lGxC31foRD3L_EgA8ZTWOQ
