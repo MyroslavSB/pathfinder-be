@@ -4,6 +4,8 @@ import com.example.pathfinderbe.model.RoutePlanRequest;
 import com.example.pathfinderbe.model.RoutePlanResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,103 +14,70 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class RoutePlannerService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${mapbox.api.url}")
-    private String mapboxApiUrl; // e.g. https://api.mapbox.com/directions/v5/mapbox/walking
+    private String mapboxApiUrl;
 
     @Value("${mapbox.api.key}")
     private String mapboxApiKey;
 
-    // walking speed meters per second (5 km/h)
-    private static final double WALKING_SPEED_MPS = 5000.0 / 3600.0; // ≈ 1.3888889
+    public RoutePlanResponse planCircularRoute(double startLat, double startLon, int durationMinutes) {
+        try {
+            // estimate walk speed ~5km/h (≈83m/min)
+            double expectedDistanceKm = (durationMinutes * 83.0) / 1000.0;
+            double radius = expectedDistanceKm / (2 * Math.PI); // circle radius (km)
 
-    public RoutePlanResponse planCircularRoute(RoutePlanRequest req) throws Exception {
-        double startLat = req.getStartLat();
-        double startLon = req.getStartLon();
-        int durationMin = req.getDurationMinutes();
-        int pointsCount = (req.getPointsCount() == null || req.getPointsCount() < 3) ? 8 : req.getPointsCount();
+            // convert km → degrees (approx)
+            double radiusDeg = radius / 111.0;
 
-        // Desired total length in meters (loop)
-        double totalSeconds = durationMin * 60.0;
-        double desiredLengthMeters = WALKING_SPEED_MPS * totalSeconds;
+            // Generate points around the start
+            List<double[]> coords = new ArrayList<>();
+            int points = 8; // nice smooth circle
+            for (int i = 0; i < points; i++) {
+                double angle = 2 * Math.PI * i / points;
+                double lat = startLat + radiusDeg * Math.cos(angle);
+                double lon = startLon + radiusDeg * Math.sin(angle);
+                coords.add(new double[]{lon, lat});
+            }
+            coords.add(new double[]{startLon, startLat}); // close the loop
 
-        // Radius of circle (meters)
-        double radius = desiredLengthMeters / (2.0 * Math.PI);
+            // build unencoded coordinate string
+            String coordinates = coords.stream()
+                    .map(c -> String.format(Locale.US, "%.6f,%.6f", c[0], c[1]))
+                    .reduce((a, b) -> a + ";" + b)
+                    .orElseThrow();
 
-        // Build list of waypoints: start -> circle points -> start
-        List<double[]> coords = new ArrayList<>();
-        coords.add(new double[]{startLon, startLat}); // Mapbox uses lon,lat
+            // build full URL
+            String url = String.format(
+                    "%s/%s?geometries=geojson&overview=full&access_token=%s",
+                    mapboxApiUrl,
+                    coordinates,
+                    mapboxApiKey
+            );
 
-        for (int i = 0; i < pointsCount; i++) {
-            double bearing = i * (360.0 / pointsCount);
-            double[] dest = destinationPoint(startLat, startLon, radius, bearing);
-            coords.add(new double[]{dest[1], dest[0]}); // store lon,lat consistent
+            // call Mapbox
+            ResponseEntity<JsonNode> response = restTemplate.getForEntity(url, JsonNode.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode route = response.getBody().path("routes").get(0);
+                return new RoutePlanResponse(
+                        route.path("geometry"),
+                        route.path("distance").asDouble(),
+                        route.path("duration").asDouble()
+                );
+            }
+
+            return new RoutePlanResponse(null, 0, 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RoutePlanResponse(null, 0, 0);
         }
-
-        coords.add(new double[]{startLon, startLat});
-
-        // Build coordinates string for Mapbox: lon,lat;lon,lat;...
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < coords.size(); i++) {
-            double[] c = coords.get(i);
-            if (i > 0) sb.append(";");
-            sb.append(String.format("%f,%f", c[0], c[1]));
-        }
-
-        String url = String.format("%s/%s?geometries=geojson&overview=full&access_token=%s",
-                mapboxApiUrl,
-                java.net.URLEncoder.encode(sb.toString(), StandardCharsets.UTF_8),
-                mapboxApiKey);
-
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new RuntimeException("Mapbox Directions API error: " + response.getStatusCode());
-        }
-
-        JsonNode root = objectMapper.readTree(response.getBody());
-        JsonNode routes = root.path("routes");
-        if (!routes.isArray() || routes.size() == 0) {
-            throw new RuntimeException("No routes returned by Mapbox.");
-        }
-
-        JsonNode best = routes.get(0);
-        double duration = best.path("duration").asDouble(); // seconds
-        double distance = best.path("distance").asDouble(); // meters
-        JsonNode geometry = best.path("geometry"); // geojson geometry
-
-        return new RoutePlanResponse(geometry, duration, distance);
-    }
-
-    /**
-     * Compute destination point given start lat/lon, distance (meters) and bearing (degrees).
-     * Returns double[]{lat, lon}.
-     *
-     * Formula based on spherical Earth.
-     */
-    private double[] destinationPoint(double latDeg, double lonDeg, double distanceMeters, double bearingDeg) {
-        double R = 6378137.0; // Earth radius in meters (WGS84)
-        double bearing = Math.toRadians(bearingDeg);
-        double lat = Math.toRadians(latDeg);
-        double lon = Math.toRadians(lonDeg);
-
-        double angularDistance = distanceMeters / R;
-
-        double destLat = Math.asin(
-                Math.sin(lat) * Math.cos(angularDistance) +
-                        Math.cos(lat) * Math.sin(angularDistance) * Math.cos(bearing)
-        );
-
-        double destLon = lon + Math.atan2(
-                Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat),
-                Math.cos(angularDistance) - Math.sin(lat) * Math.sin(destLat)
-        );
-
-        return new double[]{Math.toDegrees(destLat), Math.toDegrees(destLon)};
     }
 }

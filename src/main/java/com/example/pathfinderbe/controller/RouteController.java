@@ -17,9 +17,14 @@ public class RouteController {
     @PostMapping("/plan")
     public ResponseEntity<RoutePlanResponse> planRoute(@RequestBody RoutePlanRequest request) {
         try {
-            RoutePlanResponse resp = routePlannerService.planCircularRoute(request);
+            RoutePlanResponse resp = routePlannerService.planCircularRoute(
+                    request.getStartLat(),
+                    request.getStartLon(),
+                    request.getDurationMinutes()
+            );
             return ResponseEntity.ok(resp);
         } catch (Exception e) {
+            e.printStackTrace();
             // for debugging/testing we return 500 with message
             return ResponseEntity.status(500).body(new RoutePlanResponse(null, 0, 0));
         }
