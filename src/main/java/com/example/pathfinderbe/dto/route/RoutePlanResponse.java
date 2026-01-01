@@ -1,4 +1,4 @@
-package com.example.pathfinderbe.model;
+package com.example.pathfinderbe.dto.route;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;

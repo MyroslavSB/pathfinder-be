@@ -1,7 +1,7 @@
 package com.example.pathfinderbe.controller;
 
-import com.example.pathfinderbe.model.RoutePlanRequest;
-import com.example.pathfinderbe.model.RoutePlanResponse;
+import com.example.pathfinderbe.dto.route.RoutePlanRequest;
+import com.example.pathfinderbe.dto.route.RoutePlanResponse;
 import com.example.pathfinderbe.service.RoutePlannerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package com.example.pathfinderbe.model;
+package com.example.pathfinderbe.dto.route;
 
 import lombok.Data;
 

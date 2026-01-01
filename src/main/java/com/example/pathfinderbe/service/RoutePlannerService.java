@@ -1,17 +1,12 @@
 package com.example.pathfinderbe.service;
 
-import com.example.pathfinderbe.model.RoutePlanRequest;
-import com.example.pathfinderbe.model.RoutePlanResponse;
+import com.example.pathfinderbe.dto.route.RoutePlanResponse;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
