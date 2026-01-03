@@ -1,11 +1,31 @@
 package com.example.pathfinderbe.dto.route;
 
-import lombok.Data;
 
-@Data
+import java.util.List;
+
 public class RoutePlanRequest {
-    private double startLat;
-    private double startLon;
-    private int durationMinutes; // requested walk duration in minutes
-    private Integer pointsCount; // optional, number of circle waypoints (defaults to 8)
+
+    private CoordinateDto start;
+
+    private CoordinateDto end;
+
+    private List<WaypointDto> waypoints;
+
+    private Integer durationMinutes;
+
+    public CoordinateDto getStart() {
+        return start;
+    }
+
+    public CoordinateDto getEnd() {
+        return end;
+    }
+
+    public List<WaypointDto> getWaypoints() {
+        return waypoints;
+    }
+
+    public Integer getDurationMinutes() {
+        return durationMinutes;
+    }
 }
