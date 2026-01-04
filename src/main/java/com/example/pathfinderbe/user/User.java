@@ -40,6 +40,12 @@ public class User implements UserDetails {
         return password;
     }
 
+    public User(String email, String password, Role role) {
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
+
     @Override
     public String getUsername() {
         return email;
