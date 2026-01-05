@@ -2,8 +2,8 @@ package com.example.pathfinderbe.controller;
 
 import com.example.pathfinderbe.dto.route.RoutePlanRequest;
 import com.example.pathfinderbe.dto.route.RoutePlanResponse;
-import com.example.pathfinderbe.service.RoutePlannerService;
-//import jakarta.validation.Valid;
+import com.example.pathfinderbe.route.RoutePlannerService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +20,7 @@ public class RouteController {
 
     @PostMapping("/plan")
     public ResponseEntity<RoutePlanResponse> planRoute(
-//            @Valid
+            @Valid
             @RequestBody
             RoutePlanRequest request,
             Authentication authentication

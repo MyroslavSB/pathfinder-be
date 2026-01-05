@@ -1,9 +1,8 @@
-package com.example.pathfinderbe.service;
+package com.example.pathfinderbe.route;
 
 import com.example.pathfinderbe.dto.route.GeometryDto;
 import com.example.pathfinderbe.dto.route.RoutePlanRequest;
 import com.example.pathfinderbe.dto.route.RoutePlanResponse;
-import com.example.pathfinderbe.dto.route.WaypointDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
