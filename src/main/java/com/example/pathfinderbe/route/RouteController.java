@@ -1,8 +1,7 @@
-package com.example.pathfinderbe.controller;
+package com.example.pathfinderbe.route;
 
 import com.example.pathfinderbe.dto.route.RoutePlanRequest;
 import com.example.pathfinderbe.dto.route.RoutePlanResponse;
-import com.example.pathfinderbe.route.RoutePlannerService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
