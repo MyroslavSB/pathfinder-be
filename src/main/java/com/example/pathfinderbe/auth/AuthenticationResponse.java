@@ -1,6 +1,12 @@
 package com.example.pathfinderbe.auth;
 
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
 public class AuthenticationResponse {
 
     private String accessToken;

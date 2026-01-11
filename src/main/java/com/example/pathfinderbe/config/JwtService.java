@@ -51,9 +51,10 @@ public class JwtService {
                 .compact();
     }
 
-    private String generateToken(UserDetails userDetails, long expiration) {
+    private String buildToken(UserDetails userDetails, long expiration, String type) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
+                .claim("type", type)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSingInKey(), SignatureAlgorithm.HS256)
@@ -61,11 +62,11 @@ public class JwtService {
     }
 
     public String generateAccessToken(UserDetails userDetails) {
-        return generateToken(userDetails, ACCESS_TOKEN_EXPIRATION);
+        return buildToken(userDetails, ACCESS_TOKEN_EXPIRATION, "access");
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return generateToken(userDetails, REFRESH_TOKEN_EXPIRATION);
+        return buildToken(userDetails, REFRESH_TOKEN_EXPIRATION, "refresh");
     }
 
 
@@ -94,5 +95,14 @@ public class JwtService {
     private Key getSingInKey() {
         byte[] keyBytes = Decoders.BASE64URL.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return "refresh".equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
