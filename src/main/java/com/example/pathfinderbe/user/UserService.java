@@ -26,7 +26,7 @@ public class UserService {
     }
 
 
-    public void updateEmail(UpdateEmailRequest request, Authentication auth) {
+    public User updateEmail(UpdateEmailRequest request, Authentication auth) {
         if (!request.getNewEmail().equals(request.getConfirmNewEmail())) {
             throw new RuntimeException("Emails do not match");
         }
@@ -37,11 +37,11 @@ public class UserService {
 
         User user = getCurrentUser(auth);
         user.setEmail(request.getNewEmail());
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
 
-    public void updatePassword(UpdatePasswordRequest request, Authentication auth) {
+    public User updatePassword(UpdatePasswordRequest request, Authentication auth) {
         if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
             throw new RuntimeException("Passwords do not match");
         }
@@ -53,6 +53,6 @@ public class UserService {
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 }

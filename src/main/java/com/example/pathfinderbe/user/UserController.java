@@ -13,7 +13,7 @@ public class UserController {
     private final UserService userService;
 
     @PutMapping("/profile")
-    public ResponseEntity<?> updateProfile(
+    public ResponseEntity<User> updateProfile(
             @RequestBody UpdateProfileRequest request,
             Authentication authentication
     ) {
@@ -21,20 +21,19 @@ public class UserController {
     }
 
     @PutMapping("/email")
-    public ResponseEntity<?> updateEmail(
+    public ResponseEntity<User> updateEmail(
             @RequestBody UpdateEmailRequest request,
             Authentication authentication
     ) {
-        userService.updateEmail(request, authentication);
-        return ResponseEntity.ok("Email updated successfully");
+
+        return ResponseEntity.ok(userService.updateEmail(request, authentication));
     }
 
     @PutMapping("/password")
-    public ResponseEntity<?> updatePassword(
+    public ResponseEntity<User> updatePassword(
             @RequestBody UpdatePasswordRequest request,
             Authentication authentication
     ) {
-        userService.updatePassword(request, authentication);
-        return ResponseEntity.ok("Password updated successfully");
+        return ResponseEntity.ok(userService.updatePassword(request, authentication));
     }
 }
