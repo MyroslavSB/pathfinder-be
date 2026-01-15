@@ -2,14 +2,14 @@ package com.example.pathfinderbe.dto.route;
 
 public class CoordinateDto {
 
-    private Double latitude;
-    private Double longitude;
+    private Double lat;
+    private Double lng;
 
-    public Double getLatitude() {
-        return latitude;
+    public Double getLat() {
+        return lat;
     }
 
-    public Double getLongitude() {
-        return longitude;
+    public Double getLng() {
+        return lng;
     }
 }

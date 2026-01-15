@@ -6,12 +6,10 @@ import java.util.List;
 public class RoutePlanRequest {
 
     private CoordinateDto start;
-
     private CoordinateDto end;
-
-    private List<WaypointDto> waypoints;
-
-    private Integer durationMinutes;
+    private List<CoordinateDto> waypoints;
+    private Integer duration;
+    private ERouteType routeType;
 
     public CoordinateDto getStart() {
         return start;
@@ -21,11 +19,15 @@ public class RoutePlanRequest {
         return end;
     }
 
-    public List<WaypointDto> getWaypoints() {
+    public List<CoordinateDto> getWaypoints() {
         return waypoints;
     }
 
-    public Integer getDurationMinutes() {
-        return durationMinutes;
+    public Integer getDuration() {
+        return duration;
+    }
+
+    public ERouteType getRouteType() {
+        return routeType;
     }
 }
