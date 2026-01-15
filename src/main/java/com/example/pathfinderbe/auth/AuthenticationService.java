@@ -15,6 +15,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
@@ -23,6 +26,8 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final EmailService emailService;
 
     public AuthenticationResponse register(RegisterRequest request) {
 
@@ -35,14 +40,25 @@ public class AuthenticationService {
                 passwordEncoder.encode(request.getPassword()),
                 Role.USER
         );
+        user.setEnabled(false);
 
         userRepository.save(user);
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        String token = UUID.randomUUID().toString();
 
-        return new AuthenticationResponse(accessToken, refreshToken);
+        VerificationToken vt = new VerificationToken(
+                token,
+                user,
+                LocalDateTime.now().plusHours(24)
+        );
+
+        verificationTokenRepository.save(vt);
+
+        emailService.sendVerificationEmail(user.getEmail(), token);
+
+        return new AuthenticationResponse(null, null); // no JWT yet
     }
+
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
 
@@ -87,6 +103,22 @@ public class AuthenticationService {
         } catch (ExpiredJwtException e) {
             throw new JwtException("Refresh token expired");
         }
+    }
+
+    public void verifyEmail(String token) {
+
+        VerificationToken vt = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        if (vt.isExpired()) {
+            throw new RuntimeException("Token expired");
+        }
+
+        User user = vt.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        verificationTokenRepository.delete(vt);
     }
 
 }
