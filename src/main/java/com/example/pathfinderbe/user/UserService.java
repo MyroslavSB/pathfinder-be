@@ -3,6 +3,8 @@ package com.example.pathfinderbe.user;
 import com.example.pathfinderbe.auth.EmailService;
 import com.example.pathfinderbe.auth.VerificationToken;
 import com.example.pathfinderbe.auth.VerificationTokenRepository;
+import com.example.pathfinderbe.dto.UserDto;
+import com.example.pathfinderbe.exception.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,31 +26,43 @@ public class UserService {
         return (User) authentication.getPrincipal();
     }
 
-    public User updateProfile(UpdateProfileRequest request, Authentication auth) {
+    public UserDto getCurrentUserProfile(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return toDto(user);
+    }
+
+    private UserDto toDto(User user) {
+        return new UserDto(
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getId()
+        );
+    }
+    public UserDto updateProfile(UpdateProfileRequest request, Authentication auth) {
         User user = getCurrentUser(auth);
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
 
-        return userRepository.save(user);
+        return this.toDto(userRepository.save(user));
     }
 
 
-    public User updateEmail(UpdateEmailRequest request, Authentication auth) {
+    public ApiResponse<UserDto> updateEmail(UpdateEmailRequest request, Authentication auth) {
 
         if (!request.getNewEmail().equals(request.getConfirmNewEmail())) {
-            throw new RuntimeException("Emails do not match");
+            return ApiResponse.error("Emails do not match");
         }
 
         if (userRepository.existsByEmail(request.getNewEmail())) {
-            throw new RuntimeException("Email already in use");
+            return ApiResponse.error("Email already in use");
         }
 
         User user = getCurrentUser(auth);
 
         user.setPendingEmail(request.getNewEmail());
-        user.setEnabled(false); // lock account
-
+        user.setEnabled(false);
         userRepository.save(user);
 
         String token = UUID.randomUUID().toString();
@@ -60,24 +74,28 @@ public class UserService {
         );
 
         verificationTokenRepository.save(vt);
-
         emailService.sendVerificationEmail(request.getNewEmail(), token);
 
-        return user;
+        return ApiResponse.success(toDto(user));
     }
 
-    public User updatePassword(UpdatePasswordRequest request, Authentication auth) {
+
+    public ApiResponse<UserDto> updatePassword(UpdatePasswordRequest request, Authentication auth) {
+
         if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
-            throw new RuntimeException("Passwords do not match");
+            return ApiResponse.error("Passwords do not match");
         }
 
         User user = getCurrentUser(auth);
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new RuntimeException("Old password is incorrect");
+            return ApiResponse.error("Old password is incorrect");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        return userRepository.save(user);
+        userRepository.save(user);
+
+        return ApiResponse.success(toDto(user));
     }
+
 }
