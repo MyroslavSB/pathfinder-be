@@ -28,6 +28,9 @@ public class User implements UserDetails {
     private String password;
     private Boolean enabled;
 
+    @Column(unique = true)
+    private String pendingEmail;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -41,8 +44,10 @@ public class User implements UserDetails {
         return password;
     }
 
-    public User(String email, String password, Role role) {
+    public User(String email, String firstName, String lastName, String password, Role role) {
         this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.password = password;
         this.role = role;
     }
@@ -69,7 +74,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return Boolean.TRUE.equals(enabled);
     }
     
 }

@@ -1,9 +1,15 @@
 package com.example.pathfinderbe.user;
 
+import com.example.pathfinderbe.auth.EmailService;
+import com.example.pathfinderbe.auth.VerificationToken;
+import com.example.pathfinderbe.auth.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -11,6 +17,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VerificationTokenRepository verificationTokenRepository;
+        private final EmailService emailService;
 
     private User getCurrentUser(Authentication authentication) {
         return (User) authentication.getPrincipal();
@@ -27,6 +35,7 @@ public class UserService {
 
 
     public User updateEmail(UpdateEmailRequest request, Authentication auth) {
+
         if (!request.getNewEmail().equals(request.getConfirmNewEmail())) {
             throw new RuntimeException("Emails do not match");
         }
@@ -36,10 +45,26 @@ public class UserService {
         }
 
         User user = getCurrentUser(auth);
-        user.setEmail(request.getNewEmail());
-        return userRepository.save(user);
-    }
 
+        user.setPendingEmail(request.getNewEmail());
+        user.setEnabled(false); // lock account
+
+        userRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+
+        VerificationToken vt = new VerificationToken(
+                token,
+                user,
+                LocalDateTime.now().plusHours(24)
+        );
+
+        verificationTokenRepository.save(vt);
+
+        emailService.sendVerificationEmail(request.getNewEmail(), token);
+
+        return user;
+    }
 
     public User updatePassword(UpdatePasswordRequest request, Authentication auth) {
         if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {

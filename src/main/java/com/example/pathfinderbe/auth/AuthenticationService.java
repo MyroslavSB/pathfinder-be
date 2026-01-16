@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -37,6 +38,8 @@ public class AuthenticationService {
 
         User user = new User(
                 request.getEmail(),
+                request.getFirstName(),
+                request.getLastName(),
                 passwordEncoder.encode(request.getPassword()),
                 Role.USER
         );
@@ -105,6 +108,7 @@ public class AuthenticationService {
         }
     }
 
+    @Transactional
     public void verifyEmail(String token) {
 
         VerificationToken vt = verificationTokenRepository.findByToken(token)
@@ -115,10 +119,17 @@ public class AuthenticationService {
         }
 
         User user = vt.getUser();
+
+        if (user.getPendingEmail() != null) {
+            user.setEmail(user.getPendingEmail());
+            user.setPendingEmail(null);
+        }
+
         user.setEnabled(true);
         userRepository.save(user);
 
         verificationTokenRepository.delete(vt);
     }
+
 
 }
