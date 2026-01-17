@@ -1,17 +1,15 @@
 package com.example.pathfinderbe.auth;
 
 import com.example.pathfinderbe.config.JwtService;
+import com.example.pathfinderbe.exception.ApiResponse;
 import com.example.pathfinderbe.user.Role;
 import com.example.pathfinderbe.user.User;
 import com.example.pathfinderbe.user.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +28,10 @@ public class AuthenticationService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
 
-    public AuthenticationResponse register(RegisterRequest request) {
+    public ApiResponse<AuthenticationResponse> register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalStateException("Email already in use");
+            return ApiResponse.error("Email already in use");
         }
 
         User user = new User(
@@ -56,66 +54,82 @@ public class AuthenticationService {
         );
 
         verificationTokenRepository.save(vt);
-
         emailService.sendVerificationEmail(user.getEmail(), token);
 
-        return new AuthenticationResponse(null, null); // no JWT yet
+        return ApiResponse.success(new AuthenticationResponse(null, null));
     }
 
+    public ApiResponse<AuthenticationResponse> authenticate(AuthenticationRequest request) {
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (Exception e) {
+            return ApiResponse.error("Invalid email or password");
+        }
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
 
+        if (!user.isEnabled()) {
+            return ApiResponse.error("Email not verified");
+        }
+
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
-        return new AuthenticationResponse(accessToken, refreshToken);
+        return ApiResponse.success(
+                new AuthenticationResponse(accessToken, refreshToken)
+        );
     }
 
-    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
-        String refreshToken = request.getRefreshToken();
+    public ApiResponse<AuthenticationResponse> refreshToken(RefreshTokenRequest request) {
+
         try {
+            String refreshToken = request.getRefreshToken();
             String userEmail = jwtService.extractUsername(refreshToken);
 
             User user = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    .orElseThrow();
 
-            // Must be a valid refresh token
             if (!jwtService.isTokenValid(refreshToken, user)) {
-                throw new JwtException("Invalid refresh token");
+                return ApiResponse.error("Invalid refresh token");
             }
 
             if (!jwtService.isRefreshToken(refreshToken)) {
-                throw new JwtException("Not a refresh token");
+                return ApiResponse.error("Not a refresh token");
             }
 
             String newAccessToken = jwtService.generateAccessToken(user);
             String newRefreshToken = jwtService.generateRefreshToken(user);
 
-            return new AuthenticationResponse(newAccessToken, newRefreshToken);
+            return ApiResponse.success(
+                    new AuthenticationResponse(newAccessToken, newRefreshToken)
+            );
 
         } catch (ExpiredJwtException e) {
-            throw new JwtException("Refresh token expired");
+            return ApiResponse.error("Refresh token expired");
+        } catch (JwtException e) {
+            return ApiResponse.error("Invalid refresh token");
         }
     }
 
     @Transactional
-    public void verifyEmail(String token) {
+    public ApiResponse<String> verifyEmail(String token) {
 
         VerificationToken vt = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+                .orElse(null);
+
+        if (vt == null) {
+            return ApiResponse.error("Invalid verification token");
+        }
 
         if (vt.isExpired()) {
-            throw new RuntimeException("Token expired");
+            return ApiResponse.error("Verification token expired");
         }
 
         User user = vt.getUser();
@@ -129,7 +143,7 @@ public class AuthenticationService {
         userRepository.save(user);
 
         verificationTokenRepository.delete(vt);
+
+        return ApiResponse.success("Email verified. You may now log in.");
     }
-
-
 }

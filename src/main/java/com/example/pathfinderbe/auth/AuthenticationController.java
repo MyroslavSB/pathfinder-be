@@ -1,5 +1,6 @@
 package com.example.pathfinderbe.auth;
 
+import com.example.pathfinderbe.exception.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,34 +14,55 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> register(
             @Valid @RequestBody RegisterRequest request
     ) {
-        return ResponseEntity.ok(
-                authenticationService.register(request)
-        );
+        ApiResponse<AuthenticationResponse> response =
+                authenticationService.register(request);
+
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(
             @Valid @RequestBody AuthenticationRequest request
     ) {
-        return ResponseEntity.ok(
-                authenticationService.authenticate(request)
-        );
+        ApiResponse<AuthenticationResponse> response =
+                authenticationService.authenticate(request);
+
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthenticationResponse> refreshToken(
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> refreshToken(
             @RequestBody RefreshTokenRequest request
     ) {
-        return ResponseEntity.ok(authenticationService.refreshToken(request));
+        ApiResponse<AuthenticationResponse> response =
+                authenticationService.refreshToken(request);
+
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<String> verify(@RequestParam String token) {
-        authenticationService.verifyEmail(token);
-        return ResponseEntity.ok("Email verified. You may now log in.");
-    }
+    public ResponseEntity<ApiResponse<String>> verify(@RequestParam String token) {
+        ApiResponse<String> response = authenticationService.verifyEmail(token);
 
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        return ResponseEntity.ok(response);
+    }
 }
