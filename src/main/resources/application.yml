@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/jwt_security
-    username: postgres
-    password: 12345678
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -14,18 +14,18 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   mail:
-      host: smtp.gmail.com
-      port: 587
-      username: myroslavsobchyshyn@gmail.com
-      password: glvp istj kmmy wzxn
-      properties:
-        mail:
-          smtp:
-            auth: true
-            starttls:
-              enable: true
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 mapbox:
   api:
     url: https://api.mapbox.com/directions/v5/mapbox/walking
-    key: pk.eyJ1IjoibXlyb3NsYXYtc2IiLCJhIjoiY21manU4cTk5MDlsazJ3c2h1dzBndDI3cSJ9.lGxC31foRD3L_EgA8ZTWOQ
+    key: ${MAPBOX_API_KEY}
