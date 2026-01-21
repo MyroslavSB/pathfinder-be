@@ -1,6 +1,7 @@
 package com.example.pathfinderbe.route;
 
 import com.example.pathfinderbe.dto.route.*;
+import com.example.pathfinderbe.exception.ApiResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -21,15 +22,15 @@ public class RoutePlannerService {
     @Value("${mapbox.api.key}")
     private String mapboxApiKey;
 
-    public RoutePlanResponse planRoute(RoutePlanRequest request) {
+    public ApiResponse<RoutePlanResponse> planRoute(RoutePlanRequest request) {
 
         validate(request);
 
         if (request.getRouteType() == ERouteType.CIRCULAR) {
-            return planCircularRoute(request);
+            return ApiResponse.success(planCircularRoute(request)) ;
         }
 
-        return planPointToPointRoute(request);
+        return ApiResponse.success(planPointToPointRoute(request));
     }
 
     private void validate(RoutePlanRequest r) {
