@@ -9,19 +9,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthenticationResponse {
 
-    private String accessToken;
-    private String refreshToken;
+    private String message;
 
-    public AuthenticationResponse(String accessToken, String refreshToken) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
+    public AuthenticationResponse(String message) {
+       this.message = message;
     }
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
+    
+    public String getMessage(){
+        return message;
     }
 }
