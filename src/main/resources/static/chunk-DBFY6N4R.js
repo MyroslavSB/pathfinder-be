@@ -1,0 +1,1 @@
+import{P as r,Y as o,ga as s,h as n}from"./chunk-PZ3LDO2P.js";function w(t){t||(t=o(s));let i=new n(e=>{if(t.destroyed){e.next();return}return t.onDestroy(e.next.bind(e))});return e=>e.pipe(r(i))}export{w as a};
